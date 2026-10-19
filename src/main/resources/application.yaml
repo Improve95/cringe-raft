@@ -1,0 +1,60 @@
+spring:
+  application:
+    name: raft
+  mvc:
+    async:
+      request-timeout: 5s
+server:
+  port: ${PORT:8081}
+raft:
+  node-id: ${NODE_ID:node-1}
+  election-timeout-min: 150ms
+  election-timeout-max: 300ms
+  heartbeat-interval: 50ms
+  rpc-timeout: 1s
+  transport:
+    connect-timeout: 1s
+    read-timeout: 1s
+  peers: []
+---
+spring:
+  config:
+    activate:
+      on-profile: node1
+raft:
+  node-id: node-1
+  peers:
+    - id: node-2
+      url: http://localhost:8082
+    - id: node-3
+      url: http://localhost:8083
+server:
+  port: 8081
+---
+spring:
+  config:
+    activate:
+      on-profile: node2
+raft:
+  node-id: node-2
+  peers:
+    - id: node-1
+      url: http://localhost:8081
+    - id: node-3
+      url: http://localhost:8083
+server:
+  port: 8082
+---
+spring:
+  config:
+    activate:
+      on-profile: node3
+raft:
+  node-id: node-3
+  peers:
+    - id: node-1
+      url: http://localhost:8081
+    - id: node-2
+      url: http://localhost:8082
+server:
+  port: 8083

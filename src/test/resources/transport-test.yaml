@@ -1,0 +1,4 @@
+raft:
+  transport:
+    connect-timeout: 250ms
+    read-timeout: 750ms
