@@ -1,7 +1,8 @@
 package ru.nsu.raft.node;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Getter;
+import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import ru.nsu.raft.config.ClusterProperties;
 import ru.nsu.raft.node.event.AppendEntriesReceived;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
@@ -22,17 +23,25 @@ import ru.nsu.raft.runtime.HeartbeatScheduler;
 import ru.nsu.raft.transport.PeerClient;
 
 // Контекст намеренно не потокобезопасен: к нему обращается только EventLoop.
+@Slf4j
+@Accessors(fluent = true)
 public final class RaftNode {
-    private static final Logger log = LoggerFactory.getLogger(RaftNode.class);
+    @Getter
     private final ClusterProperties properties;
     private final RaftLog raftLog;
+    @Getter
     private final ElectionTimer electionTimer;
+    @Getter
     private final HeartbeatScheduler heartbeatScheduler;
+    @Getter
     private final PeerClient peerClient;
     private long currentTerm;
     private String votedFor;
+    @Getter
     private String leaderId;
+    @Getter
     private RaftState state;
+    @Getter
     private volatile NodeSnapshot snapshot;
 
     public RaftNode(
@@ -104,40 +113,12 @@ public final class RaftNode {
         leaderId = id;
     }
 
-    public NodeSnapshot snapshot() {
-        return snapshot;
-    }
-
     public long term() {
         return currentTerm;
     }
 
-    public String leaderId() {
-        return leaderId;
-    }
-
-    public ClusterProperties properties() {
-        return properties;
-    }
-
     public RaftLog log() {
         return raftLog;
-    }
-
-    public ElectionTimer electionTimer() {
-        return electionTimer;
-    }
-
-    public HeartbeatScheduler heartbeatScheduler() {
-        return heartbeatScheduler;
-    }
-
-    public PeerClient peerClient() {
-        return peerClient;
-    }
-
-    public RaftState state() {
-        return state;
     }
 
     public void stop() {

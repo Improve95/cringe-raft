@@ -1,23 +1,21 @@
 package ru.nsu.raft.node.state;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
 
+@Accessors(fluent = true)
 final class PeerReplication {
+    @Getter(AccessLevel.PACKAGE)
     private long nextIndex;
+    @Getter(AccessLevel.PACKAGE)
     private long matchIndex;
     private long sequence;
     private long lastHandled;
 
     PeerReplication(long nextIndex) {
         this.nextIndex = nextIndex;
-    }
-
-    long nextIndex() {
-        return nextIndex;
-    }
-
-    long matchIndex() {
-        return matchIndex;
     }
 
     long nextRequestId() {

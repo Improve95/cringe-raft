@@ -8,7 +8,8 @@ import java.time.Duration;
 @ConfigurationProperties("raft.transport")
 public record PeerClientProperties(
     @DefaultValue("500ms") Duration connectTimeout,
-    @DefaultValue("2s") Duration readTimeout) {
+    @DefaultValue("2s") Duration readTimeout
+) {
 
     public PeerClientProperties {
         ClusterProperties.requirePositive(connectTimeout, "connect-timeout");

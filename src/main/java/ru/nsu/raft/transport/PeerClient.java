@@ -1,7 +1,7 @@
 package ru.nsu.raft.transport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 import ru.nsu.raft.config.ClusterProperties.Peer;
@@ -16,17 +16,12 @@ import ru.nsu.raft.runtime.EventQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
+@Slf4j
+@RequiredArgsConstructor
 public class PeerClient {
-    private static final Logger log = LoggerFactory.getLogger(PeerClient.class);
     private final RestClient client;
     private final ExecutorService executor;
     private final EventQueue queue;
-
-    public PeerClient(RestClient client, ExecutorService executor, EventQueue queue) {
-        this.client = client;
-        this.executor = executor;
-        this.queue = queue;
-    }
 
     public void requestVote(Peer peer, RequestVoteRequest request) {
         send(

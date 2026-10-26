@@ -1,7 +1,8 @@
 package ru.nsu.raft.node.state;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import ru.nsu.raft.api.NotLeaderException;
 import ru.nsu.raft.node.RaftNode;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
@@ -11,13 +12,10 @@ import ru.nsu.raft.rpc.AppendEntriesResponse;
 import ru.nsu.raft.rpc.RequestVoteRequest;
 import ru.nsu.raft.rpc.RequestVoteResponse;
 
+@Slf4j
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractRaftState implements RaftState {
-    protected final Logger log = LoggerFactory.getLogger(getClass());
     protected final RaftNode node;
-
-    protected AbstractRaftState(RaftNode node) {
-        this.node = node;
-    }
 
     @Override
     public final RequestVoteResponse onRequestVote(RequestVoteRequest request) {

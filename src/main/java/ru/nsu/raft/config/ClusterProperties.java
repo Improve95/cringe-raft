@@ -15,7 +15,8 @@ public record ClusterProperties(
     @DefaultValue("300ms") Duration electionTimeoutMin,
     @DefaultValue("600ms") Duration electionTimeoutMax,
     @DefaultValue("75ms") Duration heartbeatInterval,
-    @DefaultValue("1s") Duration rpcTimeout) {
+    @DefaultValue("1s") Duration rpcTimeout
+) {
 
     public ClusterProperties {
         if (nodeId == null || nodeId.isBlank()) {

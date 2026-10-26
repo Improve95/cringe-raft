@@ -5,8 +5,11 @@ import ru.nsu.raft.rpc.AppendEntriesResponse;
 
 import java.util.concurrent.CompletableFuture;
 
-public record AppendEntriesReceived(AppendEntriesRequest request,
-                                    CompletableFuture<AppendEntriesResponse> reply) implements RaftEvent {
+public record AppendEntriesReceived(
+    AppendEntriesRequest request,
+    CompletableFuture<AppendEntriesResponse> reply
+) implements RaftEvent {
+
     @Override
     public void fail(Throwable error) {
         reply.completeExceptionally(error);

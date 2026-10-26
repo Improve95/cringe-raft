@@ -1,10 +1,16 @@
 package ru.nsu.raft.node.logger;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public final class RaftLog {
+@Accessors(fluent = true)
+public class RaftLog {
+
     private final List<LogEntry> entries = new ArrayList<>();
+    @Getter
     private long commitIndex;
     private LogSnapshot snapshot = new LogSnapshot(List.of(), 0);
 
@@ -14,10 +20,6 @@ public final class RaftLog {
 
     public long lastTerm() {
         return termAt(lastIndex());
-    }
-
-    public long commitIndex() {
-        return commitIndex;
     }
 
     public long termAt(long index) {
