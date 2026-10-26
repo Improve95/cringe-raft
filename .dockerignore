@@ -1,0 +1,13 @@
+.git
+.gradle
+.idea
+.vscode
+.agents
+.codex
+.aws
+.env
+.env.*
+build
+out
+*.log
+.DS_Store

@@ -925,3 +925,12 @@ gradle-app.setting
 
 #Macos
 .DS_Store
+
+# Gradle Wrapper is required to build the Docker image from a clean checkout.
+!gradlew
+!gradle/
+gradle/*
+!gradle/wrapper/
+gradle/wrapper/*
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
