@@ -16,9 +16,6 @@ services:
       RAFT_PEERS_0_URL: http://node-2:8080
       RAFT_PEERS_1_ID: node-3
       RAFT_PEERS_1_URL: http://node-3:8080
-    networks:
-      raft:
-        ipv4_address: 172.28.0.11
 
   node-2:
     <<: *node-defaults
@@ -30,9 +27,6 @@ services:
       RAFT_PEERS_0_URL: http://node-1:8080
       RAFT_PEERS_1_ID: node-3
       RAFT_PEERS_1_URL: http://node-3:8080
-    networks:
-      raft:
-        ipv4_address: 172.28.0.12
 
   node-3:
     <<: *node-defaults
@@ -44,13 +38,3 @@ services:
       RAFT_PEERS_0_URL: http://node-1:8080
       RAFT_PEERS_1_ID: node-2
       RAFT_PEERS_1_URL: http://node-2:8080
-    networks:
-      raft:
-        ipv4_address: 172.28.0.13
-
-networks:
-  raft:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/24
