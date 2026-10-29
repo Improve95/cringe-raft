@@ -1,5 +1,11 @@
 package ru.nsu.raft.api;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +34,7 @@ public class RaftRpcController {
     }
 
     @PostMapping("/request-vote")
+    @Operation(summary = "Запросить голос на выборах лидера")
     public CompletableFuture<RequestVoteResponse> requestVote(@RequestBody RequestVoteRequest request) {
         var reply = new CompletableFuture<RequestVoteResponse>().orTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         queue.post(new RequestVoteReceived(request, reply));
@@ -35,6 +42,7 @@ public class RaftRpcController {
     }
 
     @PostMapping("/append-entries")
+    @Operation(summary = "Передать записи лога или heartbeat")
     public CompletableFuture<AppendEntriesResponse> appendEntries(@RequestBody AppendEntriesRequest request) {
         var reply = new CompletableFuture<AppendEntriesResponse>().orTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         queue.post(new AppendEntriesReceived(request, reply));

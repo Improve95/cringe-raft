@@ -5,6 +5,11 @@ spring:
 server:
   port: 8081
 
+springdoc:
+  packages-to-scan: ru.nsu.raft.api
+  default-produces-media-type: application/json
+  override-with-generic-response: false
+
 raft:
   node-id: node-1
   peers: [ ]
