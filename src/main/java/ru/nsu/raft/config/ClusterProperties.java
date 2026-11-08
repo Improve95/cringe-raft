@@ -5,13 +5,15 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @ConfigurationProperties("raft")
 public record ClusterProperties(
     @DefaultValue("node-1") String nodeId,
-    List<Peer> peers,
+    Map<String, URI> nodes,
     @DefaultValue("300ms") Duration electionTimeoutMin,
     @DefaultValue("600ms") Duration electionTimeoutMax,
     @DefaultValue("75ms") Duration heartbeatInterval,
@@ -22,7 +24,8 @@ public record ClusterProperties(
         if (nodeId == null || nodeId.isBlank()) {
             throw new IllegalArgumentException("raft.node-id must not be blank");
         }
-        peers = peers == null ? List.of() : List.copyOf(peers);
+        validateNodes(nodeId, nodes);
+        nodes = Collections.unmodifiableMap(new LinkedHashMap<>(nodes));
         requirePositive(electionTimeoutMin, "election-timeout-min");
         requirePositive(electionTimeoutMax, "election-timeout-max");
         requirePositive(heartbeatInterval, "heartbeat-interval");
@@ -33,7 +36,6 @@ public record ClusterProperties(
         if (heartbeatInterval.compareTo(electionTimeoutMin) >= 0) {
             throw new IllegalArgumentException("Heartbeat interval must be < election timeout");
         }
-        validatePeers(nodeId, peers);
     }
 
     static void requirePositive(Duration duration, String name) {
@@ -42,18 +44,25 @@ public record ClusterProperties(
         }
     }
 
-    private static void validatePeers(String nodeId, List<Peer> peers) {
-        var ids = new HashSet<String>();
-        ids.add(nodeId);
-        for (Peer peer : peers) {
-            if (!ids.add(peer.id())) {
-                throw new IllegalArgumentException("Duplicate node id: " + peer.id());
-            }
+    private static void validateNodes(String nodeId, Map<String, URI> nodes) {
+        if (nodes == null || nodes.isEmpty()) {
+            throw new IllegalArgumentException("raft.nodes must contain at least one node");
+        }
+        nodes.forEach(Peer::new);
+        if (!nodes.containsKey(nodeId)) {
+            throw new IllegalArgumentException("raft.node-id is absent from raft.nodes: " + nodeId);
         }
     }
 
+    public List<Peer> peers() {
+        return nodes.entrySet().stream()
+            .filter(entry -> !entry.getKey().equals(nodeId))
+            .map(entry -> new Peer(entry.getKey(), entry.getValue()))
+            .toList();
+    }
+
     public int clusterSize() {
-        return peers.size() + 1;
+        return nodes.size();
     }
 
     public int quorum() {
@@ -61,7 +70,7 @@ public record ClusterProperties(
     }
 
     public boolean hasPeer(String id) {
-        return peers.stream().anyMatch(peer -> peer.id().equals(id));
+        return !nodeId.equals(id) && nodes.containsKey(id);
     }
 
     public record Peer(String id, URI url) {

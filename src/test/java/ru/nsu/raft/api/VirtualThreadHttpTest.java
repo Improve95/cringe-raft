@@ -22,7 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {"raft.election-timeout-min=30s", "raft.election-timeout-max=30s"}
+    properties = {"raft.election-timeout-min=30s", "raft.election-timeout-max=30s",
+        "RAFT_CONFIG=classpath:single-node.yaml"}
 )
 @Import(VirtualThreadHttpTest.ProbeConfiguration.class)
 @DirtiesContext

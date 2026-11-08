@@ -25,13 +25,8 @@ import static org.mockito.Mockito.when;
 
 class ClusterEnvironmentTest {
     @Test
-    void bindsComposeEnvironmentAndUsesItForElections() {
-        var environment = Map.<String, Object>of(
-            "RAFT_NODEID", "node-2",
-            "RAFT_PEERS_0_ID", "node-1",
-            "RAFT_PEERS_0_URL", "http://node-1:8080",
-            "RAFT_PEERS_1_ID", "node-3",
-            "RAFT_PEERS_1_URL", "http://node-3:8080");
+    void readsSharedMapSelectsLocalNodeAndUsesPeersForElections() {
+        var environment = Map.<String, Object>of("RAFT_NODEID", "node-2");
         var timer = mock(ElectionTimer.class);
         var client = mock(PeerClient.class);
         when(timer.isCurrent(1)).thenReturn(true);
@@ -52,6 +47,9 @@ class ClusterEnvironmentTest {
                     new ClusterProperties.Peer("node-1", URI.create("http://node-1:8080")),
                     new ClusterProperties.Peer("node-3", URI.create("http://node-3:8080")));
                 assertThat(properties.clusterSize()).isEqualTo(3);
+                assertThat(properties.quorum()).isEqualTo(2);
+                assertThat(properties.hasPeer("node-2")).isFalse();
+                assertThat(properties.nodes()).containsEntry("node-2", URI.create("http://node-2:8080"));
 
                 var node = context.getBean(RaftNode.class);
                 node.handle(new NodeStarted());

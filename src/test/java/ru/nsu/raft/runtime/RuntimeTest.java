@@ -9,8 +9,9 @@ import ru.nsu.raft.node.event.RequestVoteReceived;
 import ru.nsu.raft.rpc.RequestVoteRequest;
 import ru.nsu.raft.rpc.RequestVoteResponse;
 
+import java.net.URI;
 import java.time.Duration;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +57,7 @@ class RuntimeTest {
     void timerPostsEventsAndResetAndCancellationInvalidateTheirEpochs() throws Exception {
         var queue = new EventQueue();
         var properties = new ClusterProperties(
-            "a", List.of(), Duration.ofMillis(20),
+            "a", Map.of("a", URI.create("http://localhost:8081")), Duration.ofMillis(20),
             Duration.ofMillis(20), Duration.ofMillis(5), Duration.ofSeconds(1));
         try (var scheduler = Executors.newSingleThreadScheduledExecutor()) {
             var timer = new ElectionTimer(queue, scheduler, properties);

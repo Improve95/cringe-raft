@@ -23,8 +23,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {"raft.election-timeout-min=30s", "raft.election-timeout-max=30s",
-    "raft.rpc-timeout=100ms", "raft.peers[0].id=b", "raft.peers[0].url=http://127.0.0.1:1",
-    "raft.peers[1].id=c", "raft.peers[1].url=http://127.0.0.1:1"})
+    "RAFT_CONFIG=classpath:single-node.yaml", "raft.rpc-timeout=100ms",
+    "raft.nodes.b=http://127.0.0.1:1", "raft.nodes.c=http://127.0.0.1:1"})
 @AutoConfigureMockMvc
 @DirtiesContext
 class UnavailableMajorityApiTest {

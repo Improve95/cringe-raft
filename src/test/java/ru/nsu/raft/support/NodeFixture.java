@@ -25,7 +25,7 @@ import ru.nsu.raft.transport.PeerClient;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,10 +44,13 @@ public final class NodeFixture {
     public final List<SentAppend> appends = new ArrayList<>();
 
     public NodeFixture(String... peerIds) {
-        List<Peer> peers = Arrays.stream(peerIds)
-            .map(id -> new Peer(id, URI.create("http://localhost:9999"))).toList();
+        var nodes = new LinkedHashMap<String, URI>();
+        nodes.put("a", URI.create("http://localhost:9998"));
+        for (String id : peerIds) {
+            nodes.put(id, URI.create("http://localhost:9999"));
+        }
         var properties = new ClusterProperties(
-            "a", peers, Duration.ofMillis(300),
+            "a", nodes, Duration.ofMillis(300),
             Duration.ofMillis(600), Duration.ofMillis(50), Duration.ofSeconds(1));
         timer = new ElectionTimer(new EventQueue(), mock(ScheduledExecutorService.class), properties);
         doAnswer(call -> {

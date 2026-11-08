@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: "${RAFT_CONFIG:file:./config/cluster.yaml}"
   application:
     name: raft
   threads:
@@ -15,7 +17,6 @@ springdoc:
 
 raft:
   node-id: node-1
-  peers: [ ]
   election-timeout-min: 300ms
   election-timeout-max: 600ms
   heartbeat-interval: 75ms

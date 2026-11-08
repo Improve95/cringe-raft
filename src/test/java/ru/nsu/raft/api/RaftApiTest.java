@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {"raft.election-timeout-min=30s", "raft.election-timeout-max=30s",
-    "spring.config.import=classpath:transport-test.yaml"})
+    "RAFT_CONFIG=classpath:single-node.yaml", "spring.config.import=classpath:transport-test.yaml"})
 @AutoConfigureMockMvc
 @DirtiesContext
 class RaftApiTest {
