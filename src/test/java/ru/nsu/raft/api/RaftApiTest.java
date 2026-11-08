@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import ru.nsu.raft.config.PeerClientProperties;
 import ru.nsu.raft.node.NodeRole;
 import ru.nsu.raft.node.RaftNode;
@@ -19,7 +19,6 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.nullValue;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -43,7 +42,7 @@ class RaftApiTest {
     private PeerClientProperties transport;
 
     @Test
-    void servesSnapshotsAndHandlesCommandsAndRpcsAsynchronously() throws Exception {
+    void servesSnapshotsAndHandlesCommandsAndRpcs() throws Exception {
         await().atMost(Duration.ofSeconds(2)).until(() -> timer.epoch() > 0);
         mvc.perform(get("/status")).andExpect(status().isOk())
             .andExpect(jsonPath("$.nodeId").value("node-1"))
@@ -54,27 +53,27 @@ class RaftApiTest {
         assertThat(transport.readTimeout()).isEqualTo(Duration.ofMillis(750));
         mvc.perform(post("/entries").contentType("application/json").content("{\"command\":\" \"}"))
             .andExpect(status().isBadRequest());
-        mvc.perform(asyncDispatch(postAsync("/entries", "{\"command\":\"wrong-role\"}")))
+        postJson("/entries", "{\"command\":\"wrong-role\"}")
             .andExpect(status().isConflict());
 
         queue.post(new ElectionTimeout(timer.epoch()));
         await().atMost(Duration.ofSeconds(2)).until(() -> node.snapshot().status().role() == NodeRole.LEADER);
-        mvc.perform(asyncDispatch(postAsync("/entries", "{\"command\":\"hello\"}")))
+        postJson("/entries", "{\"command\":\"hello\"}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.index").value(2))
             .andExpect(jsonPath("$.term").value(1));
         mvc.perform(get("/log")).andExpect(status().isOk()).andExpect(jsonPath("$.commitIndex").value(2))
             .andExpect(jsonPath("$.entries[1].command").value("hello"));
 
-        mvc.perform(asyncDispatch(postAsync(
+        postJson(
                 "/raft/request-vote",
-                "{\"term\":0,\"candidateId\":\"peer\",\"lastLogIndex\":0,\"lastLogTerm\":0}")))
+                "{\"term\":0,\"candidateId\":\"peer\",\"lastLogIndex\":0,\"lastLogTerm\":0}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.voteGranted").value(false));
-        mvc.perform(asyncDispatch(postAsync(
+        postJson(
                 "/raft/append-entries",
                 "{\"term\":2,\"leaderId\":\"peer\",\"prevLogIndex\":2,\"prevLogTerm\":1,"
-                + "\"entries\":[],\"leaderCommit\":2}")))
+                + "\"entries\":[],\"leaderCommit\":2}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
-        mvc.perform(asyncDispatch(postAsync("/entries", "{\"command\":\"redirect\"}")))
+        postJson("/entries", "{\"command\":\"redirect\"}")
             .andExpect(status().isConflict()).andExpect(jsonPath("$.leaderId").value("peer"));
         mvc.perform(post("/raft/append-entries").contentType("application/json")
                 .content("{\"term\":2,\"leaderId\":\"peer\",\"prevLogIndex\":0,\"prevLogTerm\":0,"
@@ -84,8 +83,8 @@ class RaftApiTest {
             .andExpect(jsonPath("$.term").value(2)).andExpect(jsonPath("$.leaderId").value("peer"));
     }
 
-    private MvcResult postAsync(String path, String body) throws Exception {
+    private ResultActions postJson(String path, String body) throws Exception {
         return mvc.perform(post(path).contentType("application/json").content(body))
-            .andExpect(request().asyncStarted()).andReturn();
+            .andExpect(request().asyncNotStarted());
     }
 }

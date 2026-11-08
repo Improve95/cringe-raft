@@ -1,10 +1,6 @@
 package ru.nsu.raft.api;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +13,7 @@ import ru.nsu.raft.node.logger.LogSnapshot;
 import ru.nsu.raft.runtime.EventQueue;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -43,9 +40,10 @@ public class LogController {
         summary = "Добавить команду в лог",
         description = "Запрос отправляется лидеру. Успешный ответ возвращается после фиксации записи большинством узлов."
     )
-    public CompletableFuture<EntryResponse> addEntry(@RequestBody EntryRequest request) {
+    public EntryResponse addEntry(@RequestBody EntryRequest request)
+        throws ExecutionException, InterruptedException {
         var reply = new CompletableFuture<EntryResponse>().orTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         queue.post(new ClientEntryReceived(request, reply));
-        return reply;
+        return reply.get();
     }
 }

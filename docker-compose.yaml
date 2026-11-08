@@ -17,8 +17,6 @@ services:
       RAFT_PEERS_0_URL: http://node-2:8080
       RAFT_PEERS_1_ID: node-3
       RAFT_PEERS_1_URL: http://node-3:8080
-      RAFT_PEERS_2_ID: node-4
-      RAFT_PEERS_2_URL: http://node-4:8080
 
   node-2:
     <<: *node-defaults
@@ -30,8 +28,6 @@ services:
       RAFT_PEERS_0_URL: http://node-1:8080
       RAFT_PEERS_1_ID: node-3
       RAFT_PEERS_1_URL: http://node-3:8080
-      RAFT_PEERS_2_ID: node-4
-      RAFT_PEERS_2_URL: http://node-4:8080
 
   node-3:
     <<: *node-defaults
@@ -43,18 +39,16 @@ services:
       RAFT_PEERS_0_URL: http://node-1:8080
       RAFT_PEERS_1_ID: node-2
       RAFT_PEERS_1_URL: http://node-2:8080
-      RAFT_PEERS_2_ID: node-4
-      RAFT_PEERS_2_URL: http://node-4:8080
 
-  node-4:
-    <<: *node-defaults
-    ports:
-      - "8084:8080"
-    environment:
-      RAFT_NODEID: node-4
-      RAFT_PEERS_0_ID: node-1
-      RAFT_PEERS_0_URL: http://node-1:8080
-      RAFT_PEERS_1_ID: node-2
-      RAFT_PEERS_1_URL: http://node-2:8080
-      RAFT_PEERS_2_ID: node-3
-      RAFT_PEERS_2_URL: http://node-3:8080
+#  node-4:
+#    <<: *node-defaults
+#    ports:
+#      - "8084:8080"
+#    environment:
+#      RAFT_NODEID: node-4
+#      RAFT_PEERS_0_ID: node-1
+#      RAFT_PEERS_0_URL: http://node-1:8080
+#      RAFT_PEERS_1_ID: node-2
+#      RAFT_PEERS_1_URL: http://node-2:8080
+#      RAFT_PEERS_2_ID: node-3
+#      RAFT_PEERS_2_URL: http://node-3:8080

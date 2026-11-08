@@ -21,6 +21,13 @@ public class ApiExceptionHandler {
             .body(new ApiError("Request timed out; the entry may still commit later", null));
     }
 
+    @ExceptionHandler(InterruptedException.class)
+    public ResponseEntity<ApiError> interrupted() {
+        Thread.currentThread().interrupt();
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(new ApiError("Request interrupted; the entry may still commit later", null));
+    }
+
     @ExceptionHandler({IllegalArgumentException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<ApiError> invalidRequest() {
         return ResponseEntity.badRequest().body(new ApiError("Invalid request body", null));

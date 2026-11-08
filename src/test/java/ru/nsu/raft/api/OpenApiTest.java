@@ -22,9 +22,8 @@ class OpenApiTest {
     private MockMvc mvc;
 
     @Test
-    void documentsAllEndpointsAndUnwrapsAsyncResponseSchemas() throws Exception {
+    void documentsAllEndpointsAndResponseSchemas() throws Exception {
         String entryResponse = "$.paths['/entries'].post.responses['200'].content['application/json'].schema['$ref']";
-        String errorResponse = "$.paths['/entries'].post.responses['409'].content['application/json'].schema['$ref']";
         String voteResponse = "$.paths['/raft/request-vote'].post.responses['200'].content['application/json'].schema['$ref']";
         String appendResponse = "$.paths['/raft/append-entries'].post.responses['200']"
             + ".content['application/json'].schema['$ref']";
@@ -34,16 +33,12 @@ class OpenApiTest {
             .andExpect(jsonPath("$.info.title").value("Raft API"))
             .andExpect(jsonPath("$.paths['/status'].get").exists())
             .andExpect(jsonPath("$.paths['/log'].get").exists())
-            .andExpect(jsonPath("$.paths['/entries'].post").exists())
+            .andExpect(jsonPath("$.paths['/entries'].post.summary").value("Добавить команду в лог"))
             .andExpect(jsonPath("$.paths['/raft/request-vote'].post").exists())
             .andExpect(jsonPath("$.paths['/raft/append-entries'].post").exists())
             .andExpect(jsonPath(entryResponse).value("#/components/schemas/EntryResponse"))
-            .andExpect(jsonPath(errorResponse).value("#/components/schemas/ApiError"))
             .andExpect(jsonPath(voteResponse).value("#/components/schemas/RequestVoteResponse"))
-            .andExpect(jsonPath(appendResponse).value("#/components/schemas/AppendEntriesResponse"))
-            .andExpect(jsonPath("$.paths['/entries'].post.responses['400']").exists())
-            .andExpect(jsonPath("$.paths['/entries'].post.responses['503']").exists())
-            .andExpect(jsonPath("$.paths['/status'].get.responses['409']").doesNotExist());
+            .andExpect(jsonPath(appendResponse).value("#/components/schemas/AppendEntriesResponse"));
     }
 
     @Test

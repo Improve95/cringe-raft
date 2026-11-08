@@ -18,7 +18,6 @@ import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -44,10 +43,9 @@ class UnavailableMajorityApiTest {
         queue.post(new ElectionTimeout(timer.epoch()));
         queue.post(new VoteResponseReceived("b", new RequestVoteResponse(1, true)));
         await().atMost(Duration.ofSeconds(2)).until(() -> node.snapshot().status().role() == NodeRole.LEADER);
-        var result = mvc.perform(post("/entries").contentType("application/json").content("{\"command\":\"pending\"}"))
-            .andExpect(request().asyncStarted()).andReturn();
-        result.getAsyncResult(2000);
-        mvc.perform(asyncDispatch(result)).andExpect(status().isServiceUnavailable());
+        mvc.perform(post("/entries").contentType("application/json").content("{\"command\":\"pending\"}"))
+            .andExpect(request().asyncNotStarted())
+            .andExpect(status().isServiceUnavailable());
         var log = node.snapshot().log();
         assertThat(log.commitIndex()).isZero();
         assertThat(log.entries().getLast().command()).isEqualTo("pending");
