@@ -26,7 +26,7 @@ class OpenApiTest {
         String entryResponse = "$.paths['/entries'].post.responses['200'].content['application/json'].schema['$ref']";
         String voteResponse = "$.paths['/raft/request-vote'].post.responses['200'].content['application/json'].schema['$ref']";
         String appendResponse = "$.paths['/raft/append-entries'].post.responses['200']"
-            + ".content['application/json'].schema['$ref']";
+                                + ".content['application/json'].schema['$ref']";
 
         mvc.perform(get("/v3/api-docs"))
             .andExpect(status().isOk())

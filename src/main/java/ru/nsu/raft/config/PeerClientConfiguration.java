@@ -28,16 +28,20 @@ public class PeerClientConfiguration {
     }
 
     @Bean
-    RestClient peerRestClient(HttpClient peerHttpClient, PeerClientProperties properties,
-                              @Qualifier("peerExecutor") ExecutorService executor) {
+    RestClient peerRestClient(
+        HttpClient peerHttpClient, PeerClientProperties properties,
+        @Qualifier("peerExecutor") ExecutorService executor
+    ) {
         var requestFactory = new JdkClientHttpRequestFactory(peerHttpClient, executor);
         requestFactory.setReadTimeout(properties.readTimeout());
         return RestClient.builder().requestFactory(requestFactory).build();
     }
 
     @Bean
-    PeerClient peerClient(RestClient peerRestClient, @Qualifier("peerExecutor") ExecutorService executor,
-                          EventQueue queue) {
+    PeerClient peerClient(
+        RestClient peerRestClient, @Qualifier("peerExecutor") ExecutorService executor,
+        EventQueue queue
+    ) {
         return new PeerClient(peerRestClient, executor, queue);
     }
 }

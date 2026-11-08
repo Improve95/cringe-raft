@@ -21,7 +21,7 @@ public abstract class AbstractRaftState implements RaftState {
     public final RequestVoteResponse onRequestVote(RequestVoteRequest request) {
         observeTerm(request.term());
         boolean grant = request.term() == node.term() && node.canVoteFor(request.candidateId())
-                        && node.log().isCandidateUpToDate(request.lastLogIndex(), request.lastLogTerm());
+            && node.log().isCandidateUpToDate(request.lastLogIndex(), request.lastLogTerm());
         if (grant) {
             node.recordVote(request.candidateId());
             node.electionTimer().reset();

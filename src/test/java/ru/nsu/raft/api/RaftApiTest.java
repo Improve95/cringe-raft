@@ -65,13 +65,13 @@ class RaftApiTest {
             .andExpect(jsonPath("$.entries[1].command").value("hello"));
 
         postJson(
-                "/raft/request-vote",
-                "{\"term\":0,\"candidateId\":\"peer\",\"lastLogIndex\":0,\"lastLogTerm\":0}")
+            "/raft/request-vote",
+            "{\"term\":0,\"candidateId\":\"peer\",\"lastLogIndex\":0,\"lastLogTerm\":0}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.voteGranted").value(false));
         postJson(
-                "/raft/append-entries",
-                "{\"term\":2,\"leaderId\":\"peer\",\"prevLogIndex\":2,\"prevLogTerm\":1,"
-                + "\"entries\":[],\"leaderCommit\":2}")
+            "/raft/append-entries",
+            "{\"term\":2,\"leaderId\":\"peer\",\"prevLogIndex\":2,\"prevLogTerm\":1,"
+            + "\"entries\":[],\"leaderCommit\":2}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
         postJson("/entries", "{\"command\":\"redirect\"}")
             .andExpect(status().isConflict()).andExpect(jsonPath("$.leaderId").value("peer"));

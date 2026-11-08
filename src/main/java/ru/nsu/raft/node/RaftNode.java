@@ -4,15 +4,8 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import ru.nsu.raft.config.ClusterProperties;
-import ru.nsu.raft.node.event.AppendEntriesReceived;
-import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
-import ru.nsu.raft.node.event.ClientEntryReceived;
-import ru.nsu.raft.node.event.ElectionTimeout;
-import ru.nsu.raft.node.event.HeartbeatTick;
-import ru.nsu.raft.node.event.NodeStarted;
 import ru.nsu.raft.node.event.RaftEvent;
-import ru.nsu.raft.node.event.RequestVoteReceived;
-import ru.nsu.raft.node.event.VoteResponseReceived;
+import ru.nsu.raft.node.handler.RaftEventHandler;
 import ru.nsu.raft.node.logger.RaftLog;
 import ru.nsu.raft.node.state.CandidateState;
 import ru.nsu.raft.node.state.FollowerState;
@@ -21,6 +14,8 @@ import ru.nsu.raft.node.state.RaftState;
 import ru.nsu.raft.runtime.ElectionTimer;
 import ru.nsu.raft.runtime.HeartbeatScheduler;
 import ru.nsu.raft.transport.PeerClient;
+
+import java.util.Map;
 
 // Контекст намеренно не потокобезопасен: к нему обращается только EventLoop.
 @Slf4j
@@ -35,6 +30,7 @@ public final class RaftNode {
     private final HeartbeatScheduler heartbeatScheduler;
     @Getter
     private final PeerClient peerClient;
+    private final Map<Class<? extends RaftEvent>, RaftEventHandler<RaftEvent>> eventHandlers;
     private long currentTerm;
     private String votedFor;
     @Getter
@@ -49,29 +45,26 @@ public final class RaftNode {
         RaftLog raftLog,
         ElectionTimer electionTimer,
         HeartbeatScheduler heartbeatScheduler,
-        PeerClient peerClient
+        PeerClient peerClient,
+        Map<Class<? extends RaftEvent>, RaftEventHandler<RaftEvent>> eventHandlers
     ) {
         this.properties = properties;
         this.raftLog = raftLog;
         this.electionTimer = electionTimer;
         this.heartbeatScheduler = heartbeatScheduler;
         this.peerClient = peerClient;
+        this.eventHandlers = Map.copyOf(eventHandlers);
         state = new FollowerState(this);
         publishSnapshot();
     }
 
     public void handle(RaftEvent event) {
         try {
-            switch (event) {
-                case NodeStarted ignored -> state.onEnter();
-                case ElectionTimeout timeout -> handleElectionTimeout(timeout);
-                case HeartbeatTick ignored -> state.onHeartbeatTick();
-                case RequestVoteReceived vote -> vote.reply().complete(state.onRequestVote(vote.request()));
-                case AppendEntriesReceived append -> append.reply().complete(state.onAppendEntries(append.request()));
-                case VoteResponseReceived vote -> state.onVoteResponse(vote.from(), vote.response());
-                case AppendEntriesResponseReceived append -> state.onAppendEntriesResponse(append);
-                case ClientEntryReceived entry -> state.onClientEntry(entry);
+            var handler = eventHandlers.get(event.getClass());
+            if (handler == null) {
+                throw new IllegalArgumentException("No handler for event: " + event.getClass().getSimpleName());
             }
+            handler.handle(this, event);
         } finally {
             publishSnapshot();
         }
@@ -124,12 +117,6 @@ public final class RaftNode {
     public void stop() {
         state.onExit();
         electionTimer.cancel();
-    }
-
-    private void handleElectionTimeout(ElectionTimeout timeout) {
-        if (electionTimer.isCurrent(timeout.epoch())) {
-            state.onElectionTimeout();
-        }
     }
 
     private void transitionTo(RaftState next) {

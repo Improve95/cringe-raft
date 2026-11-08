@@ -4,6 +4,7 @@ import ru.nsu.raft.api.EntryRequest;
 import ru.nsu.raft.api.EntryResponse;
 import ru.nsu.raft.config.ClusterProperties;
 import ru.nsu.raft.config.ClusterProperties.Peer;
+import ru.nsu.raft.config.RaftEventConfiguration;
 import ru.nsu.raft.node.RaftNode;
 import ru.nsu.raft.node.event.AppendEntriesReceived;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
@@ -57,7 +58,7 @@ public final class NodeFixture {
             appends.add(new SentAppend(call.getArgument(0), call.getArgument(1), call.getArgument(2)));
             return null;
         }).when(client).appendEntries(any(), anyLong(), any());
-        node = new RaftNode(properties, log, timer, heartbeat, client);
+        node = new RaftNode(properties, log, timer, heartbeat, client, new RaftEventConfiguration().raftEventHandlers());
         node.handle(new NodeStarted());
     }
 

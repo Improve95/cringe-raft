@@ -71,7 +71,8 @@ class ClusterFileTest {
     private ApplicationContextRunner context(Path file, String nodeId) {
         return new ApplicationContextRunner()
             .withInitializer(context -> context.getEnvironment().getPropertySources().addFirst(
-                new SystemEnvironmentPropertySource("systemEnvironment",
+                new SystemEnvironmentPropertySource(
+                    "systemEnvironment",
                     Map.of("RAFT_CONFIG", file.toString(), "RAFT_NODEID", nodeId))))
             .withInitializer(new ConfigDataApplicationContextInitializer())
             .withUserConfiguration(BindingConfiguration.class);

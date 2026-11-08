@@ -64,8 +64,8 @@ Java 25 JRE от пользователя `raft`. Предварительная
 во все контейнеры только для чтения. Для каждого сервиса остаются `RAFT_NODEID` и
 публикация порта; списки пиров в переменных окружения больше не нужны.
 
-| Сервис   | Адрес для пиров       | API с хоста             |
-|----------|-----------------------|-------------------------|
+| Сервис   | Адрес для пиров      | API с хоста             |
+|----------|----------------------|-------------------------|
 | `node-1` | `http://node-1:8080` | `http://localhost:8081` |
 | `node-2` | `http://node-2:8080` | `http://localhost:8082` |
 | `node-3` | `http://node-3:8080` | `http://localhost:8083` |
@@ -154,8 +154,17 @@ raft:
 ## Устройство
 
 Внешние запросы, таймеры и ответы транспорта поступают в `EventQueue`. Единственный поток `EventLoop` меняет `RaftNode`,
-`RaftLog` и текущий объект роли. Единственный switch в `RaftNode.handle` выбирает тип события; поведение ролей находится
-в `FollowerState`, `CandidateState`, `LeaderState`.
+`RaftLog` и текущий объект роли. `RaftNode.handle` выбирает обработчик по классу события из неизменяемой карты,
+созданной в `RaftEventConfiguration`. Для каждого события есть отдельный класс в `node.handler`:
+`NodeStartedHandler`, `ElectionTimeoutHandler`, `HeartbeatTickHandler`, `RequestVoteReceivedHandler`,
+`AppendEntriesReceivedHandler`, `VoteResponseReceivedHandler`, `AppendEntriesResponseReceivedHandler`
+и `ClientEntryReceivedHandler`.
+
+Обработчик получает текущий `RaftNode` и типизированное событие, затем обращается к текущей роли.
+Поведение ролей находится в `FollowerState`, `CandidateState`, `LeaderState`. Обработчики выполняются
+синхронно в event loop; снимок состояния публикуется в `finally`, включая случай ошибки обработчика.
+Для нового события нужно добавить handler и регистрацию в `RaftEventConfiguration`.
+Тест проверяет, что карта покрывает все типы sealed-интерфейса `RaftEvent`.
 
 `AbstractRaftState` содержит единое правило перехода при большем терме и проверку голосования. `LeaderState` хранит
 `nextIndex`, `matchIndex` и ожидания клиентов; `RaftLog` проверяет префиксы, заменяет конфликтующий хвост и хранит
