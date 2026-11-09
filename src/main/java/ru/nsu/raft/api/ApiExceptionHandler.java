@@ -10,29 +10,24 @@ import java.util.concurrent.TimeoutException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    @ExceptionHandler(NotLeaderException.class)
-    public ResponseEntity<ApiError> notLeader(NotLeaderException error) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiError(error.getMessage(), error.leaderId()));
-    }
-
     @ExceptionHandler(TimeoutException.class)
     public ResponseEntity<ApiError> timeout() {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new ApiError("Request timed out; the entry may still commit later", null));
+            .body(new ApiError("Request timed out"));
     }
 
     @ExceptionHandler(InterruptedException.class)
     public ResponseEntity<ApiError> interrupted() {
         Thread.currentThread().interrupt();
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new ApiError("Request interrupted; the entry may still commit later", null));
+            .body(new ApiError("Request interrupted"));
     }
 
     @ExceptionHandler({IllegalArgumentException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<ApiError> invalidRequest() {
-        return ResponseEntity.badRequest().body(new ApiError("Invalid request body", null));
+        return ResponseEntity.badRequest().body(new ApiError("Invalid request body"));
     }
 
-    public record ApiError(String message, String leaderId) {
+    public record ApiError(String message) {
     }
 }

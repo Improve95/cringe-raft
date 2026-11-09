@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/raft")
-@Tag(name = "Raft RPC", description = "Межузловые запросы голосования и репликации")
+@Tag(name = "Raft RPC", description = "Межузловые запросы голосования и heartbeat")
 public class RaftRpcController {
     private final EventQueue queue;
     private final long timeoutMillis;
@@ -40,7 +40,7 @@ public class RaftRpcController {
     }
 
     @PostMapping("/append-entries")
-    @Operation(summary = "Передать записи лога или heartbeat")
+    @Operation(summary = "Передать heartbeat лидера")
     public AppendEntriesResponse appendEntries(@RequestBody AppendEntriesRequest request) throws ExecutionException, InterruptedException {
         var reply = new CompletableFuture<AppendEntriesResponse>().orTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         queue.post(new AppendEntriesReceived(request, reply));

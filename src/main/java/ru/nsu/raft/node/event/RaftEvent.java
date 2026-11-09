@@ -7,7 +7,6 @@ public sealed interface RaftEvent permits
     RequestVoteReceived,
     AppendEntriesReceived,
     VoteResponseReceived,
-    AppendEntriesResponseReceived,
-    ClientEntryReceived {
+    AppendEntriesResponseReceived {
     default void fail(Throwable error) {}
 }

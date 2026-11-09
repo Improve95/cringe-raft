@@ -23,7 +23,6 @@ class OpenApiTest {
 
     @Test
     void documentsAllEndpointsAndResponseSchemas() throws Exception {
-        String entryResponse = "$.paths['/entries'].post.responses['200'].content['application/json'].schema['$ref']";
         String voteResponse = "$.paths['/raft/request-vote'].post.responses['200'].content['application/json'].schema['$ref']";
         String appendResponse = "$.paths['/raft/append-entries'].post.responses['200']"
                                 + ".content['application/json'].schema['$ref']";
@@ -32,11 +31,10 @@ class OpenApiTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.info.title").value("Raft API"))
             .andExpect(jsonPath("$.paths['/status'].get").exists())
-            .andExpect(jsonPath("$.paths['/log'].get").exists())
-            .andExpect(jsonPath("$.paths['/entries'].post.summary").value("Добавить команду в лог"))
+            .andExpect(jsonPath("$.paths['/log']").doesNotExist())
+            .andExpect(jsonPath("$.paths['/entries']").doesNotExist())
             .andExpect(jsonPath("$.paths['/raft/request-vote'].post").exists())
             .andExpect(jsonPath("$.paths['/raft/append-entries'].post").exists())
-            .andExpect(jsonPath(entryResponse).value("#/components/schemas/EntryResponse"))
             .andExpect(jsonPath(voteResponse).value("#/components/schemas/RequestVoteResponse"))
             .andExpect(jsonPath(appendResponse).value("#/components/schemas/AppendEntriesResponse"));
     }

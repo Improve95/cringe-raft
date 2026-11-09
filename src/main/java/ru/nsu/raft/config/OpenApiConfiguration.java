@@ -12,6 +12,6 @@ public class OpenApiConfiguration {
         return new OpenAPI().info(new Info()
             .title("Raft API")
             .version("1.0")
-            .description("Выборы лидера и репликация лога в учебном кластере Raft."));
+            .description("Выборы лидера и heartbeat в учебном кластере Raft."));
     }
 }

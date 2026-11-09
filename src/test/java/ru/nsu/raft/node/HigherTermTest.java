@@ -7,8 +7,6 @@ import ru.nsu.raft.rpc.AppendEntriesRequest;
 import ru.nsu.raft.rpc.AppendEntriesResponse;
 import ru.nsu.raft.support.NodeFixture;
 
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HigherTermTest {
@@ -16,7 +14,7 @@ class HigherTermTest {
     @EnumSource(NodeRole.class)
     void higherTermVoteRequestForcesFollower(NodeRole role) {
         var fixture = fixtureIn(role);
-        assertThat(fixture.requestVote(5, "c", fixture.log.lastIndex(), fixture.log.lastTerm()).voteGranted()).isTrue();
+        assertThat(fixture.requestVote(5, "c").voteGranted()).isTrue();
         assertFollowerInTermFive(fixture);
     }
 
@@ -24,9 +22,9 @@ class HigherTermTest {
     @EnumSource(NodeRole.class)
     void higherTermAppendRequestForcesFollower(NodeRole role) {
         var fixture = fixtureIn(role);
-        fixture.append(new AppendEntriesRequest(5, "b", 0, 0, List.of(), 0));
+        fixture.append(new AppendEntriesRequest(5, "b"));
         assertFollowerInTermFive(fixture);
-        assertThat(fixture.node.snapshot().status().leaderId()).isEqualTo("b");
+        assertThat(fixture.node.nodeStatus().leaderId()).isEqualTo("b");
     }
 
     @ParameterizedTest
@@ -39,12 +37,10 @@ class HigherTermTest {
 
     @ParameterizedTest
     @EnumSource(NodeRole.class)
-    void higherTermAppendResponseForcesFollowerEvenForAnOldRequest(NodeRole role) {
+    void higherTermHeartbeatResponseForcesFollowerEvenOnFailure(NodeRole role) {
         var fixture = fixtureIn(role);
-        var oldRequest = new AppendEntriesRequest(0, "a", 0, 0, List.of(), 0);
         fixture.node.handle(new AppendEntriesResponseReceived(
-            "b", 1, oldRequest,
-            new AppendEntriesResponse(5, false)));
+            "b", new AppendEntriesResponse(5, false)));
         assertFollowerInTermFive(fixture);
     }
 
@@ -60,7 +56,7 @@ class HigherTermTest {
     }
 
     private void assertFollowerInTermFive(NodeFixture fixture) {
-        assertThat(fixture.node.snapshot().status().role()).isEqualTo(NodeRole.FOLLOWER);
+        assertThat(fixture.node.nodeStatus().role()).isEqualTo(NodeRole.FOLLOWER);
         assertThat(fixture.node.term()).isEqualTo(5);
         assertThat(fixture.timer.isCurrent(fixture.timer.epoch())).isTrue();
     }

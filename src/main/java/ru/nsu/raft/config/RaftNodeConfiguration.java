@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Import;
 import ru.nsu.raft.node.RaftNode;
 import ru.nsu.raft.node.event.RaftEvent;
 import ru.nsu.raft.node.handler.RaftEventHandler;
-import ru.nsu.raft.node.logger.RaftLog;
 import ru.nsu.raft.runtime.ElectionTimer;
 import ru.nsu.raft.runtime.HeartbeatScheduler;
 import ru.nsu.raft.transport.PeerClient;
@@ -21,19 +20,13 @@ import java.util.Map;
 public class RaftNodeConfiguration {
 
     @Bean
-    public RaftLog raftLog() {
-        return new RaftLog();
-    }
-
-    @Bean
     public RaftNode raftNode(
         ClusterProperties properties,
-        RaftLog log,
         ElectionTimer electionTimer,
         HeartbeatScheduler heartbeatScheduler,
         PeerClient peerClient,
         @Qualifier("raftEventHandlers") Map<Class<? extends RaftEvent>, RaftEventHandler<RaftEvent>> eventHandlers
     ) {
-        return new RaftNode(properties, log, electionTimer, heartbeatScheduler, peerClient, eventHandlers);
+        return new RaftNode(properties, electionTimer, heartbeatScheduler, peerClient, eventHandlers);
     }
 }

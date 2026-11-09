@@ -39,7 +39,7 @@ class RuntimeTest {
         try {
             loop.start();
             var failed = new CompletableFuture<RequestVoteResponse>();
-            queue.post(new RequestVoteReceived(new RequestVoteRequest(1, "b", 0, 0), failed));
+            queue.post(new RequestVoteReceived(new RequestVoteRequest(1, "b"), failed));
             queue.post(new ElectionTimeout(2));
             processed.get(2, TimeUnit.SECONDS);
             assertThat(failed).isCompletedExceptionally();

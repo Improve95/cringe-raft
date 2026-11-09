@@ -29,7 +29,7 @@ public final class CandidateState extends AbstractRaftState {
         votes.add(node.properties().nodeId());
         node.electionTimer().reset();
         log.info("[{}] term={} election started", node.properties().nodeId(), node.term());
-        var request = new RequestVoteRequest(node.term(), node.properties().nodeId(), node.log().lastIndex(), node.log().lastTerm());
+        var request = new RequestVoteRequest(node.term(), node.properties().nodeId());
         node.properties().peers().forEach(peer -> node.peerClient().requestVote(peer, request));
         checkQuorum();
     }

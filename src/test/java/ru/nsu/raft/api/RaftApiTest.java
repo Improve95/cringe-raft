@@ -42,7 +42,7 @@ class RaftApiTest {
     private PeerClientProperties transport;
 
     @Test
-    void servesSnapshotsAndHandlesCommandsAndRpcs() throws Exception {
+    void servesStatusAndHandlesElectionRpcs() throws Exception {
         await().atMost(Duration.ofSeconds(2)).until(() -> timer.epoch() > 0);
         mvc.perform(get("/status")).andExpect(status().isOk())
             .andExpect(jsonPath("$.nodeId").value("node-1"))
@@ -51,36 +51,25 @@ class RaftApiTest {
             .andExpect(jsonPath("$.leaderId").value(nullValue()));
         assertThat(transport.connectTimeout()).isEqualTo(Duration.ofMillis(250));
         assertThat(transport.readTimeout()).isEqualTo(Duration.ofMillis(750));
-        mvc.perform(post("/entries").contentType("application/json").content("{\"command\":\" \"}"))
-            .andExpect(status().isBadRequest());
-        postJson("/entries", "{\"command\":\"wrong-role\"}")
-            .andExpect(status().isConflict());
 
         queue.post(new ElectionTimeout(timer.epoch()));
-        await().atMost(Duration.ofSeconds(2)).until(() -> node.snapshot().status().role() == NodeRole.LEADER);
-        postJson("/entries", "{\"command\":\"hello\"}")
-            .andExpect(status().isOk()).andExpect(jsonPath("$.index").value(2))
-            .andExpect(jsonPath("$.term").value(1));
-        mvc.perform(get("/log")).andExpect(status().isOk()).andExpect(jsonPath("$.commitIndex").value(2))
-            .andExpect(jsonPath("$.entries[1].command").value("hello"));
-
-        postJson(
-            "/raft/request-vote",
-            "{\"term\":0,\"candidateId\":\"peer\",\"lastLogIndex\":0,\"lastLogTerm\":0}")
+        await().atMost(Duration.ofSeconds(2)).until(() -> node.nodeStatus().role() == NodeRole.LEADER);
+        postJson("/raft/request-vote", "{\"term\":0,\"candidateId\":\"peer\"}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.voteGranted").value(false));
-        postJson(
-            "/raft/append-entries",
-            "{\"term\":2,\"leaderId\":\"peer\",\"prevLogIndex\":2,\"prevLogTerm\":1,"
-            + "\"entries\":[],\"leaderCommit\":2}")
+        postJson("/raft/append-entries", "{\"term\":2,\"leaderId\":\"peer\"}")
             .andExpect(status().isOk()).andExpect(jsonPath("$.success").value(true));
-        postJson("/entries", "{\"command\":\"redirect\"}")
-            .andExpect(status().isConflict()).andExpect(jsonPath("$.leaderId").value("peer"));
-        mvc.perform(post("/raft/append-entries").contentType("application/json")
-                .content("{\"term\":2,\"leaderId\":\"peer\",\"prevLogIndex\":0,\"prevLogTerm\":0,"
-                         + "\"entries\":[{\"index\":3,\"term\":2,\"command\":\"gap\"}],\"leaderCommit\":0}"))
+        postJson("/raft/append-entries", "{\"term\":-1,\"leaderId\":\"peer\"}")
+            .andExpect(status().isBadRequest());
+        postJson("/raft/request-vote", "{\"term\":2,\"candidateId\":\"\"}")
             .andExpect(status().isBadRequest());
         mvc.perform(get("/status")).andExpect(jsonPath("$.role").value("FOLLOWER"))
             .andExpect(jsonPath("$.term").value(2)).andExpect(jsonPath("$.leaderId").value("peer"));
+    }
+
+    @Test
+    void logAndCommandEndpointsAreAbsent() throws Exception {
+        mvc.perform(get("/log")).andExpect(status().isNotFound());
+        postJson("/entries", "{\"command\":\"hello\"}").andExpect(status().isNotFound());
     }
 
     private ResultActions postJson(String path, String body) throws Exception {

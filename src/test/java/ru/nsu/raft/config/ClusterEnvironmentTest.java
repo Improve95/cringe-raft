@@ -54,9 +54,9 @@ class ClusterEnvironmentTest {
                 var node = context.getBean(RaftNode.class);
                 node.handle(new NodeStarted());
                 node.handle(new ElectionTimeout(1));
-                assertThat(node.snapshot().status())
+                assertThat(node.nodeStatus())
                     .isEqualTo(new NodeStatus("node-2", NodeRole.CANDIDATE, 1, null));
-                var request = new RequestVoteRequest(1, "node-2", 0, 0);
+                var request = new RequestVoteRequest(1, "node-2");
                 verify(client).requestVote(properties.peers().get(0), request);
                 verify(client).requestVote(properties.peers().get(1), request);
                 verifyNoMoreInteractions(client);

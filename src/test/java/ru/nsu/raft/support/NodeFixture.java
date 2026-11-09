@@ -1,19 +1,14 @@
 package ru.nsu.raft.support;
 
-import ru.nsu.raft.api.EntryRequest;
-import ru.nsu.raft.api.EntryResponse;
 import ru.nsu.raft.config.ClusterProperties;
 import ru.nsu.raft.config.ClusterProperties.Peer;
 import ru.nsu.raft.config.RaftEventConfiguration;
 import ru.nsu.raft.node.RaftNode;
 import ru.nsu.raft.node.event.AppendEntriesReceived;
-import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
-import ru.nsu.raft.node.event.ClientEntryReceived;
 import ru.nsu.raft.node.event.ElectionTimeout;
 import ru.nsu.raft.node.event.NodeStarted;
 import ru.nsu.raft.node.event.RequestVoteReceived;
 import ru.nsu.raft.node.event.VoteResponseReceived;
-import ru.nsu.raft.node.logger.RaftLog;
 import ru.nsu.raft.rpc.AppendEntriesRequest;
 import ru.nsu.raft.rpc.AppendEntriesResponse;
 import ru.nsu.raft.rpc.RequestVoteRequest;
@@ -32,12 +27,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 public final class NodeFixture {
-    public final RaftLog log = new RaftLog();
     public final PeerClient client = mock(PeerClient.class);
     public final HeartbeatScheduler heartbeat = mock(HeartbeatScheduler.class);
     public final ElectionTimer timer;
@@ -55,10 +48,10 @@ public final class NodeFixture {
             Duration.ofMillis(600), Duration.ofMillis(50), Duration.ofSeconds(1));
         timer = new ElectionTimer(new EventQueue(), mock(ScheduledExecutorService.class), properties);
         doAnswer(call -> {
-            appends.add(new SentAppend(call.getArgument(0), call.getArgument(1), call.getArgument(2)));
+            appends.add(new SentAppend(call.getArgument(0), call.getArgument(1)));
             return null;
-        }).when(client).appendEntries(any(), anyLong(), any());
-        node = new RaftNode(properties, log, timer, heartbeat, client, new RaftEventConfiguration().raftEventHandlers());
+        }).when(client).appendEntries(any(), any());
+        node = new RaftNode(properties, timer, heartbeat, client, new RaftEventConfiguration().raftEventHandlers());
         node.handle(new NodeStarted());
     }
 
@@ -70,9 +63,9 @@ public final class NodeFixture {
         node.handle(new VoteResponseReceived(from, new RequestVoteResponse(term, granted)));
     }
 
-    public RequestVoteResponse requestVote(long term, String candidate, long lastIndex, long lastTerm) {
+    public RequestVoteResponse requestVote(long term, String candidate) {
         var reply = new CompletableFuture<RequestVoteResponse>();
-        node.handle(new RequestVoteReceived(new RequestVoteRequest(term, candidate, lastIndex, lastTerm), reply));
+        node.handle(new RequestVoteReceived(new RequestVoteRequest(term, candidate), reply));
         return reply.join();
     }
 
@@ -82,22 +75,10 @@ public final class NodeFixture {
         return reply.join();
     }
 
-    public CompletableFuture<EntryResponse> submit(String command) {
-        var reply = new CompletableFuture<EntryResponse>();
-        node.handle(new ClientEntryReceived(new EntryRequest(command), reply));
-        return reply;
-    }
-
     public SentAppend lastAppend(String peerId) {
         return appends.stream().filter(sent -> sent.peer().id().equals(peerId)).toList().getLast();
     }
 
-    public void acknowledge(SentAppend sent, long term, boolean success) {
-        node.handle(new AppendEntriesResponseReceived(
-            sent.peer().id(), sent.requestId(), sent.request(),
-            new AppendEntriesResponse(term, success)));
-    }
-
-    public record SentAppend(Peer peer, long requestId, AppendEntriesRequest request) {
+    public record SentAppend(Peer peer, AppendEntriesRequest request) {
     }
 }

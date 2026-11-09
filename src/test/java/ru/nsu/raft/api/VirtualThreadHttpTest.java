@@ -39,7 +39,7 @@ class VirtualThreadHttpTest {
         var response = peerRestClient.post()
             .uri("http://localhost:" + port + "/raft/request-vote")
             .contentType(MediaType.APPLICATION_JSON)
-            .body(new RequestVoteRequest(1, "peer", 0, 0))
+            .body(new RequestVoteRequest(1, "peer"))
             .retrieve()
             .toEntity(RequestVoteResponse.class);
 

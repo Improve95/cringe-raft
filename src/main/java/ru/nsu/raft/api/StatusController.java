@@ -17,6 +17,6 @@ public class StatusController {
     @GetMapping("/status")
     @Operation(summary = "Получить роль, терм и известного лидера")
     public NodeStatus status() {
-        return node.snapshot().status();
+        return node.nodeStatus();
     }
 }

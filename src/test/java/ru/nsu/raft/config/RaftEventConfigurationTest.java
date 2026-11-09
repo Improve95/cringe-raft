@@ -31,11 +31,11 @@ class RaftEventConfigurationTest {
                 throw new IllegalStateException("handler failed");
             });
         var node = new RaftNode(
-            fixture.node.properties(), fixture.log, fixture.timer, fixture.heartbeat, fixture.client, handlers);
+            fixture.node.properties(), fixture.timer, fixture.heartbeat, fixture.client, handlers);
         handlers.clear();
 
         assertThatThrownBy(() -> node.handle(new HeartbeatTick()))
             .isInstanceOf(IllegalStateException.class).hasMessage("handler failed");
-        assertThat(node.snapshot().status().term()).isEqualTo(1);
+        assertThat(node.nodeStatus().term()).isEqualTo(1);
     }
 }

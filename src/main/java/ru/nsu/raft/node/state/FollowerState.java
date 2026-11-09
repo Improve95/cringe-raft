@@ -31,14 +31,7 @@ public final class FollowerState extends AbstractRaftState {
     protected AppendEntriesResponse acceptAppendEntries(AppendEntriesRequest request) {
         node.setLeader(request.leaderId());
         node.electionTimer().reset();
-        boolean success = node.log().appendFrom(request.prevLogIndex(), request.prevLogTerm(), request.entries());
-        if (success) {
-            // Figure 2: нельзя фиксировать непроверенный хвост за последней записью этого RPC.
-            node.log().commitThrough(Math.min(request.leaderCommit(), request.lastIndex()));
-        }
-        log.trace(
-            "[{}] term={} AppendEntries from {} success={}",
-            node.properties().nodeId(), node.term(), request.leaderId(), success);
-        return new AppendEntriesResponse(node.term(), success);
+        log.trace("[{}] term={} heartbeat from {}", node.properties().nodeId(), node.term(), request.leaderId());
+        return new AppendEntriesResponse(node.term(), true);
     }
 }

@@ -25,22 +25,31 @@ public class PeerClient {
 
     public void requestVote(Peer peer, RequestVoteRequest request) {
         send(
-            peer, "/raft/request-vote", request, RequestVoteResponse.class,
+            peer,
+            "/raft/request-vote",
+            request,
+            RequestVoteResponse.class,
             response -> queue.post(new VoteResponseReceived(peer.id(), response)));
     }
 
-    public void appendEntries(Peer peer, long requestId, AppendEntriesRequest request) {
+    public void appendEntries(Peer peer, AppendEntriesRequest request) {
         send(
-            peer, "/raft/append-entries", request, AppendEntriesResponse.class,
-            response -> queue.post(new AppendEntriesResponseReceived(peer.id(), requestId, request, response)));
+            peer,
+            "/raft/append-entries",
+            request,
+            AppendEntriesResponse.class,
+            response -> queue.post(new AppendEntriesResponseReceived(peer.id(), response)));
     }
 
     private <T> void send(Peer peer, String path, Object request, Class<T> responseType, Consumer<T> onResponse) {
         executor.execute(() -> {
             try {
-                T response = client.post().uri(peer.url().resolve(path))
-                    .contentType(MediaType.APPLICATION_JSON).body(request)
-                    .retrieve().body(responseType);
+                T response = client.post()
+                    .uri(peer.url().resolve(path))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(request)
+                    .retrieve()
+                    .body(responseType);
                 if (response != null) {
                     onResponse.accept(response);
                 }

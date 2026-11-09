@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Проверка трёх реальных JVM: репликация, падение лидера и восстановление."""
+"""Проверка трёх реальных JVM: выборы, heartbeat и перевыборы после падения лидера."""
 import json
 from pathlib import Path
 import socket
@@ -55,14 +55,15 @@ def main():
     processes = {}
     files = []
     with tempfile.TemporaryDirectory(prefix='raft-smoke-') as directory:
+        config = Path(directory) / 'cluster.yaml'
+        config.write_text('raft:\n  nodes:\n' + ''.join(
+            f'    {node}: http://127.0.0.1:{port}\n' for node, port in ports.items()))
         def start(node):
             output = open(Path(directory) / f'{node}-{len(files)}.log', 'w')
             files.append(output)
             args = ['java', '-Xmx128m', '-jar', str(JAR), f'--server.port={ports[node]}',
                     f'--raft.node-id={node}']
-            for index, peer in enumerate(peer for peer in ports if peer != node):
-                args += [f'--raft.peers[{index}].id={peer}',
-                         f'--raft.peers[{index}].url=http://127.0.0.1:{ports[peer]}']
+            args.append(f'--RAFT_CONFIG=file:{config}')
             processes[node] = subprocess.Popen(args, cwd=ROOT, stdout=output, stderr=subprocess.STDOUT)
 
         def stop(node):
@@ -81,41 +82,21 @@ def main():
                 return leaders[0]
             return None
 
-        def logs_equal():
-            logs = [request(ports[node], '/log')[1] for node in processes]
-            return logs[0] if all(log == logs[0] for log in logs) else None
-
         try:
             for node in ports:
                 start(node)
             first = eventually(leader, 'initial leader')
-            assert request(ports[first], '/entries', {'command': 'before-failure'})[0] == 200
-            eventually(logs_equal, 'initial replication')
-            follower = next(node for node in processes if node != first)
-            status, body = request(ports[follower], '/entries', {'command': 'wrong-node'})
-            assert status == 409 and body['leaderId'] == first, (status, body)
-            print(f'Initial leader {first}: replication and follower HTTP 409 OK', flush=True)
+            first_term = request(ports[first], '/status')[1]['term']
+            print(f'Initial leader {first}: all followers recognize the leader', flush=True)
             stop(first)
             second = eventually(leader, 'leader after failure')
             assert second != first
-            assert request(ports[second], '/entries', {'command': 'after-failure'})[0] == 200
-            eventually(logs_equal, 'replication after failure')
-            print(f'New leader {second}: failover and committed write OK', flush=True)
+            assert request(ports[second], '/status')[1]['term'] > first_term
+            print(f'New leader {second}: failover OK', flush=True)
             start(first)
-            eventually(leader, 'restarted follower discovers leader')
-            log = eventually(logs_equal, 'restarted node catches up')
-            commands = [entry['command'] for entry in log['entries'] if entry['command'] is not None]
-            assert commands == ['before-failure', 'after-failure'], commands
+            eventually(leader, 'restarted node discovers leader')
             assert request(ports[first], '/status')[1]['role'] == 'FOLLOWER'
-            print('Restarted node: follower role and complete log recovery OK', flush=True)
-            for node in list(processes):
-                if node != second:
-                    stop(node)
-            status, body = request(ports[second], '/entries', {'command': 'no-majority'})
-            assert status == 503, (status, body)
-            log = request(ports[second], '/log')[1]
-            assert log['entries'][-1]['index'] > log['commitIndex']
-            print('Lost majority: HTTP 503 and uncommitted entry OK', flush=True)
+            print('Restarted node: follower role and heartbeat OK', flush=True)
         except BaseException:
             for path in Path(directory).glob('*.log'):
                 print(f'\n--- {path.name} ---\n{path.read_text()[-5000:]}')

@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.nsu.raft.node.event.AppendEntriesReceived;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
-import ru.nsu.raft.node.event.ClientEntryReceived;
 import ru.nsu.raft.node.event.ElectionTimeout;
 import ru.nsu.raft.node.event.HeartbeatTick;
 import ru.nsu.raft.node.event.NodeStarted;
@@ -13,7 +12,6 @@ import ru.nsu.raft.node.event.RequestVoteReceived;
 import ru.nsu.raft.node.event.VoteResponseReceived;
 import ru.nsu.raft.node.handler.AppendEntriesReceivedHandler;
 import ru.nsu.raft.node.handler.AppendEntriesResponseReceivedHandler;
-import ru.nsu.raft.node.handler.ClientEntryReceivedHandler;
 import ru.nsu.raft.node.handler.ElectionTimeoutHandler;
 import ru.nsu.raft.node.handler.HeartbeatTickHandler;
 import ru.nsu.raft.node.handler.NodeStartedHandler;
@@ -42,7 +40,6 @@ public class RaftEventConfiguration {
             handler(RequestVoteReceived.class, new RequestVoteReceivedHandler()),
             handler(AppendEntriesReceived.class, new AppendEntriesReceivedHandler()),
             handler(VoteResponseReceived.class, new VoteResponseReceivedHandler()),
-            handler(AppendEntriesResponseReceived.class, new AppendEntriesResponseReceivedHandler()),
-            handler(ClientEntryReceived.class, new ClientEntryReceivedHandler()));
+            handler(AppendEntriesResponseReceived.class, new AppendEntriesResponseReceivedHandler()));
     }
 }

@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import ru.nsu.raft.config.ClusterProperties;
 import ru.nsu.raft.node.event.RaftEvent;
 import ru.nsu.raft.node.handler.RaftEventHandler;
-import ru.nsu.raft.node.logger.RaftLog;
 import ru.nsu.raft.node.state.CandidateState;
 import ru.nsu.raft.node.state.FollowerState;
 import ru.nsu.raft.node.state.LeaderState;
@@ -23,7 +22,6 @@ import java.util.Map;
 public final class RaftNode {
     @Getter
     private final ClusterProperties properties;
-    private final RaftLog raftLog;
     @Getter
     private final ElectionTimer electionTimer;
     @Getter
@@ -38,24 +36,22 @@ public final class RaftNode {
     @Getter
     private RaftState state;
     @Getter
-    private volatile NodeSnapshot snapshot;
+    private volatile NodeStatus nodeStatus;
 
     public RaftNode(
         ClusterProperties properties,
-        RaftLog raftLog,
         ElectionTimer electionTimer,
         HeartbeatScheduler heartbeatScheduler,
         PeerClient peerClient,
         Map<Class<? extends RaftEvent>, RaftEventHandler<RaftEvent>> eventHandlers
     ) {
         this.properties = properties;
-        this.raftLog = raftLog;
         this.electionTimer = electionTimer;
         this.heartbeatScheduler = heartbeatScheduler;
         this.peerClient = peerClient;
         this.eventHandlers = Map.copyOf(eventHandlers);
         state = new FollowerState(this);
-        publishSnapshot();
+        publishNodeStatus();
     }
 
     public void handle(RaftEvent event) {
@@ -66,7 +62,7 @@ public final class RaftNode {
             }
             handler.handle(this, event);
         } finally {
-            publishSnapshot();
+            publishNodeStatus();
         }
     }
 
@@ -110,10 +106,6 @@ public final class RaftNode {
         return currentTerm;
     }
 
-    public RaftLog log() {
-        return raftLog;
-    }
-
     public void stop() {
         state.onExit();
         electionTimer.cancel();
@@ -126,8 +118,7 @@ public final class RaftNode {
         state.onEnter();
     }
 
-    private void publishSnapshot() {
-        var status = new NodeStatus(properties.nodeId(), state.role(), currentTerm, leaderId);
-        snapshot = new NodeSnapshot(status, raftLog.snapshot());
+    private void publishNodeStatus() {
+        nodeStatus = new NodeStatus(properties.nodeId(), state.role(), currentTerm, leaderId);
     }
 }
