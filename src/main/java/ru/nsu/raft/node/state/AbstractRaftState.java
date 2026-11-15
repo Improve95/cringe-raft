@@ -3,8 +3,10 @@ package ru.nsu.raft.node.state;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import ru.nsu.raft.api.NotLeaderException;
 import ru.nsu.raft.node.RaftNode;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
+import ru.nsu.raft.node.event.ClientEntryReceived;
 import ru.nsu.raft.rpc.AppendEntriesRequest;
 import ru.nsu.raft.rpc.AppendEntriesResponse;
 import ru.nsu.raft.rpc.RequestVoteRequest;
@@ -18,7 +20,8 @@ public abstract class AbstractRaftState implements RaftState {
     @Override
     public final RequestVoteResponse onRequestVote(RequestVoteRequest request) {
         observeTerm(request.term());
-        boolean grant = request.term() == node.term() && node.canVoteFor(request.candidateId());
+        boolean grant = request.term() == node.term() && node.canVoteFor(request.candidateId())
+            && node.log().isCandidateUpToDate(request.lastLogIndex(), request.lastLogTerm());
         if (grant) {
             node.recordVote(request.candidateId());
             node.electionTimer().reset();
@@ -46,7 +49,14 @@ public abstract class AbstractRaftState implements RaftState {
 
     @Override
     public final void onAppendEntriesResponse(AppendEntriesResponseReceived event) {
-        observeTerm(event.response().term());
+        if (!observeTerm(event.response().term()) && event.response().term() == node.term()) {
+            handleAppendEntriesResponse(event);
+        }
+    }
+
+    @Override
+    public void onClientEntry(ClientEntryReceived event) {
+        event.fail(new NotLeaderException(node.leaderId()));
     }
 
     protected AppendEntriesResponse acceptAppendEntries(AppendEntriesRequest request) {
@@ -55,6 +65,9 @@ public abstract class AbstractRaftState implements RaftState {
     }
 
     protected void handleVoteResponse(String from, RequestVoteResponse response) {
+    }
+
+    protected void handleAppendEntriesResponse(AppendEntriesResponseReceived event) {
     }
 
     @Override

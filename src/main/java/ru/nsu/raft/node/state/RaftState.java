@@ -2,6 +2,7 @@ package ru.nsu.raft.node.state;
 
 import ru.nsu.raft.node.NodeRole;
 import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
+import ru.nsu.raft.node.event.ClientEntryReceived;
 import ru.nsu.raft.rpc.AppendEntriesRequest;
 import ru.nsu.raft.rpc.AppendEntriesResponse;
 import ru.nsu.raft.rpc.RequestVoteRequest;
@@ -21,6 +22,8 @@ public interface RaftState {
     void onVoteResponse(String from, RequestVoteResponse response);
 
     void onAppendEntriesResponse(AppendEntriesResponseReceived event);
+
+    void onClientEntry(ClientEntryReceived event);
 
     RequestVoteResponse onRequestVote(RequestVoteRequest request);
 

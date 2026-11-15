@@ -14,6 +14,7 @@ import ru.nsu.raft.rpc.RequestVoteRequest;
 import ru.nsu.raft.runtime.EventQueue;
 
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,7 @@ class PeerClientTest {
     private final Peer peer = new Peer("b", URI.create("http://peer:8082"));
 
     @Test
-    void performsRpcsOnVirtualThreadsAndPostsResponses() throws Exception {
+    void performsRpcsOnVirtualThreadsAndPostsCorrelatedResponses() throws Exception {
         var builder = RestClient.builder();
         var server = MockRestServiceServer.bindTo(builder).build();
         server.expect(requestTo("http://peer:8082/raft/request-vote")).andRespond(request -> {
@@ -43,13 +44,15 @@ class PeerClientTest {
         var queue = new EventQueue();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var client = new PeerClient(builder.build(), executor, queue);
-            client.requestVote(peer, new RequestVoteRequest(2, "a"));
+            client.requestVote(peer, new RequestVoteRequest(2, "a", 0, 0));
             var vote = (VoteResponseReceived) nextEvent(queue);
             assertThat(vote.from()).isEqualTo("b");
             assertThat(vote.response().voteGranted()).isTrue();
-            var request = new AppendEntriesRequest(2, "a");
-            client.appendEntries(peer, request);
+            var request = new AppendEntriesRequest(2, "a", 0, 0, List.of(), 0);
+            client.appendEntries(peer, 7, request);
             var append = (AppendEntriesResponseReceived) nextEvent(queue);
+            assertThat(append.request()).isSameAs(request);
+            assertThat(append.requestId()).isEqualTo(7);
             assertThat(append.from()).isEqualTo("b");
             assertThat(append.response().success()).isTrue();
         }
@@ -64,7 +67,7 @@ class PeerClientTest {
         var queue = mock(EventQueue.class);
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var client = new PeerClient(builder.build(), executor, queue);
-            client.requestVote(peer, new RequestVoteRequest(1, "a"));
+            client.requestVote(peer, new RequestVoteRequest(1, "a", 0, 0));
         }
         verifyNoInteractions(queue);
         server.verify();
