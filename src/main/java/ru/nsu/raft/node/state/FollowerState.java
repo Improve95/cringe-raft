@@ -24,7 +24,7 @@ public final class FollowerState extends AbstractRaftState {
 
     @Override
     public void onElectionTimeout() {
-        log.info(
+        log.debug(
             "[{}] term={}, state={} electionTimeout event",
             node.properties().nodeId(), node.term(), this.getClass().getSimpleName());
         node.becomeCandidate();

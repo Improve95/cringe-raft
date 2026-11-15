@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Проверка трёх реальных JVM: выборы, heartbeat и перевыборы после падения лидера."""
+"""Проверка трёх JVM: выборы, репликация, восстановление лога и потеря кворума."""
 import json
 from pathlib import Path
 import socket
@@ -82,6 +82,28 @@ def main():
                 return leaders[0]
             return None
 
+        def submit(node, command):
+            status, entry = request(ports[node], '/entries', {'command': command})
+            assert status == 200, (status, entry)
+            status, log = request(ports[node], '/log')
+            assert status == 200, (status, log)
+            assert log['commitIndex'] >= entry['index'], log
+            assert log['entries'][entry['index'] - 1] == {
+                'index': entry['index'], 'term': entry['term'], 'command': command}, log
+
+        def logs_match(commands):
+            logs = []
+            for node in processes:
+                status, log = request(ports[node], '/log')
+                if status != 200:
+                    return False
+                logs.append(log)
+            return all(
+                log == logs[0]
+                and log['commitIndex'] == len(log['entries'])
+                and [entry['command'] for entry in log['entries'] if entry['command'] is not None] == commands
+                for log in logs)
+
         try:
             initial_nodes = list(ports)[:2]
             joining_node = list(ports)[2]
@@ -90,22 +112,46 @@ def main():
             first = eventually(leader, 'initial leader')
             first_term = request(ports[first], '/status')[1]['term']
             print(f'Initial leader {first}: all followers recognize the leader', flush=True)
+            commands = ['before-join-1', 'before-join-2']
+            for command in commands:
+                submit(first, command)
+            eventually(lambda: logs_match(commands), 'initial commands replicated to majority')
             start(joining_node)
             assert eventually(leader, 'new node discovers existing leader') == first
             joining_status = request(ports[joining_node], '/status')[1]
             assert joining_status['role'] == 'FOLLOWER', joining_status
             assert joining_status['term'] == first_term, joining_status
             assert request(ports[first], '/status')[1]['term'] == first_term
-            print('New node: joined as follower without changing the election term', flush=True)
+            eventually(lambda: logs_match(commands), 'new node catches up with committed log')
+            print('New node: joined as follower and recovered the committed log', flush=True)
+            status, body = request(ports[joining_node], '/entries', {'command': 'wrong-role'})
+            assert status == 409 and body['leaderId'] == first, (status, body)
             stop(first)
             second = eventually(leader, 'leader after failure')
             assert second != first
             assert request(ports[second], '/status')[1]['term'] > first_term
-            print(f'New leader {second}: failover OK', flush=True)
+            commands.append('after-failover')
+            submit(second, commands[-1])
+            eventually(lambda: logs_match(commands), 'committed prefix survives leader failure')
+            print(f'New leader {second}: committed prefix preserved and new command replicated', flush=True)
             start(first)
             eventually(leader, 'restarted node discovers leader')
             assert request(ports[first], '/status')[1]['role'] == 'FOLLOWER'
-            print('Restarted node: follower role and heartbeat OK', flush=True)
+            eventually(lambda: logs_match(commands), 'restarted node recovers full log')
+            print('Restarted node: full log and commit index recovered', flush=True)
+
+            current = eventually(leader, 'leader before quorum loss')
+            for node in list(processes):
+                if node != current:
+                    stop(node)
+            _, before = request(ports[current], '/log')
+            status, body = request(ports[current], '/entries', {'command': 'without-quorum'})
+            assert status == 503, (status, body)
+            _, after = request(ports[current], '/log')
+            assert after['commitIndex'] == before['commitIndex'], (before, after)
+            assert after['entries'][:-1] == before['entries'], (before, after)
+            assert after['entries'][-1]['command'] == 'without-quorum', after
+            print('No quorum: command timed out without advancing commit index', flush=True)
         except BaseException:
             for path in Path(directory).glob('*.log'):
                 print(f'\n--- {path.name} ---\n{path.read_text()[-5000:]}')

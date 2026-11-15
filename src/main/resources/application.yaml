@@ -6,6 +6,9 @@ spring:
   threads:
     virtual:
       enabled: true
+  mvc:
+    servlet:
+      load-on-startup: 1
 
 server:
   port: 8081
@@ -28,4 +31,4 @@ raft:
 
 logging:
   level:
-    ru.nsu.raft.node.state.FollowerState: INFO
+    ru.nsu.raft.runtime.EventLoop: ${HANDLING_EVENT_LEVEL:INFO}

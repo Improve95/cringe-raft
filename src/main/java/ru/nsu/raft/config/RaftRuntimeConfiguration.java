@@ -51,8 +51,8 @@ public class RaftRuntimeConfiguration {
     @Bean
     public ApplicationListener<ApplicationReadyEvent> raftStartup(ElectionTimer electionTimer, EventLoop eventLoop) {
         return _ -> {
-            electionTimer.start();
             eventLoop.start();
+            electionTimer.start();
         };
     }
 }

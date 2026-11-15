@@ -44,7 +44,7 @@ class RaftStartupTest {
             var timer = context.getBean(ElectionTimer.class);
             var loop = context.getBean(EventLoop.class);
             var scheduler = context.getBean(ScheduledThreadPoolExecutor.class);
-            var request = new RequestVoteReceived(new RequestVoteRequest(1, "b"), new CompletableFuture<>());
+            var request = new RequestVoteReceived(new RequestVoteRequest(1, "b", 0, 0), new CompletableFuture<>());
             context.getBean(EventQueue.class).post(request);
 
             assertThat(loop.isRunning()).isFalse();
