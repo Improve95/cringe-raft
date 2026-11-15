@@ -21,11 +21,15 @@ public final class EventLoop implements SmartLifecycle {
     private Thread thread;
 
     @Override
+    public boolean isAutoStartup() {
+        return false;
+    }
+
+    @Override
     public void start() {
         if (running) {
             return;
         }
-        queue.post(new NodeStarted());
         termination = new CompletableFuture<>();
         running = true;
         thread = Thread.ofPlatform().name("raft-event-loop").start(this::run);
@@ -48,6 +52,8 @@ public final class EventLoop implements SmartLifecycle {
 
     private void run() {
         try {
+            // HTTP-запрос мог попасть в очередь до ApplicationReadyEvent; сначала инициализируем ноду.
+            dispatch(new NodeStarted());
             while (running) {
                 dispatch(queue.take());
             }

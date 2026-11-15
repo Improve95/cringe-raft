@@ -45,7 +45,7 @@ public final class NodeFixture {
         }
         var properties = new ClusterProperties(
             "a", nodes, Duration.ofMillis(300),
-            Duration.ofMillis(600), Duration.ofMillis(50), Duration.ofSeconds(1));
+            Duration.ofMillis(600), Duration.ofMillis(25), Duration.ofMillis(50), Duration.ofSeconds(1));
         timer = new ElectionTimer(new EventQueue(), mock(ScheduledExecutorService.class), properties);
         doAnswer(call -> {
             appends.add(new SentAppend(call.getArgument(0), call.getArgument(1)));

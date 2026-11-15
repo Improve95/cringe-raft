@@ -66,8 +66,7 @@ public abstract class AbstractRaftState implements RaftState {
     }
 
     @Override
-    public void onElectionTimeout() {
-    }
+    public void onElectionTimeout() {}
 
     @Override
     public void onHeartbeatTick() {

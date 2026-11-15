@@ -35,6 +35,6 @@ class ConfigurationTest {
     private ClusterProperties properties(Map<String, URI> nodes, long heartbeat, long min, long max) {
         return new ClusterProperties(
             "a", nodes, Duration.ofMillis(min), Duration.ofMillis(max),
-            Duration.ofMillis(heartbeat), Duration.ofSeconds(1));
+            Duration.ofMillis(25), Duration.ofMillis(heartbeat), Duration.ofSeconds(1));
     }
 }

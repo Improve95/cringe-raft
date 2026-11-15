@@ -16,6 +16,7 @@ public record ClusterProperties(
     Map<String, URI> nodes,
     @DefaultValue("300ms") Duration electionTimeoutMin,
     @DefaultValue("600ms") Duration electionTimeoutMax,
+    @DefaultValue("25ms") Duration electionCheckInterval,
     @DefaultValue("75ms") Duration heartbeatInterval,
     @DefaultValue("1s") Duration rpcTimeout
 ) {
@@ -28,6 +29,7 @@ public record ClusterProperties(
         nodes = Collections.unmodifiableMap(new LinkedHashMap<>(nodes));
         requirePositive(electionTimeoutMin, "election-timeout-min");
         requirePositive(electionTimeoutMax, "election-timeout-max");
+        requirePositive(electionCheckInterval, "election-check-interval");
         requirePositive(heartbeatInterval, "heartbeat-interval");
         requirePositive(rpcTimeout, "rpc-timeout");
         if (electionTimeoutMax.compareTo(electionTimeoutMin) < 0) {

@@ -58,9 +58,10 @@ class RuntimeTest {
         var queue = new EventQueue();
         var properties = new ClusterProperties(
             "a", Map.of("a", URI.create("http://localhost:8081")), Duration.ofMillis(20),
-            Duration.ofMillis(20), Duration.ofMillis(5), Duration.ofSeconds(1));
+            Duration.ofMillis(20), Duration.ofMillis(5), Duration.ofMillis(5), Duration.ofSeconds(1));
         try (var scheduler = Executors.newSingleThreadScheduledExecutor()) {
             var timer = new ElectionTimer(queue, scheduler, properties);
+            timer.start();
             timer.reset();
             var event = CompletableFuture.supplyAsync(() -> {
                 try {

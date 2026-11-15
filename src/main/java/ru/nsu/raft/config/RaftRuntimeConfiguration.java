@@ -1,5 +1,7 @@
 package ru.nsu.raft.config;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import ru.nsu.raft.node.RaftNode;
@@ -12,20 +14,21 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 @Configuration(proxyBeanMethods = false)
 public class RaftRuntimeConfiguration {
+
     @Bean
-    EventQueue eventQueue() {
+    public EventQueue eventQueue() {
         return new EventQueue();
     }
 
     @Bean(destroyMethod = "shutdownNow")
-    ScheduledThreadPoolExecutor raftScheduler() {
+    public ScheduledThreadPoolExecutor raftScheduler() {
         var scheduler = new ScheduledThreadPoolExecutor(1, Thread.ofPlatform().name("raft-timer-", 0).factory());
         scheduler.setRemoveOnCancelPolicy(true);
         return scheduler;
     }
 
-    @Bean
-    ElectionTimer electionTimer(
+    @Bean(destroyMethod = "stop")
+    public ElectionTimer electionTimer(
         EventQueue queue, ScheduledThreadPoolExecutor scheduler,
         ClusterProperties properties
     ) {
@@ -33,7 +36,7 @@ public class RaftRuntimeConfiguration {
     }
 
     @Bean
-    HeartbeatScheduler heartbeatScheduler(
+    public HeartbeatScheduler heartbeatScheduler(
         EventQueue queue, ScheduledThreadPoolExecutor scheduler,
         ClusterProperties properties
     ) {
@@ -41,7 +44,15 @@ public class RaftRuntimeConfiguration {
     }
 
     @Bean
-    EventLoop eventLoop(EventQueue queue, RaftNode node) {
+    public EventLoop eventLoop(EventQueue queue, RaftNode node) {
         return new EventLoop(queue, node);
+    }
+
+    @Bean
+    public ApplicationListener<ApplicationReadyEvent> raftStartup(ElectionTimer electionTimer, EventLoop eventLoop) {
+        return _ -> {
+            electionTimer.start();
+            eventLoop.start();
+        };
     }
 }

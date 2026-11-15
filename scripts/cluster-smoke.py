@@ -83,11 +83,20 @@ def main():
             return None
 
         try:
-            for node in ports:
+            initial_nodes = list(ports)[:2]
+            joining_node = list(ports)[2]
+            for node in initial_nodes:
                 start(node)
             first = eventually(leader, 'initial leader')
             first_term = request(ports[first], '/status')[1]['term']
             print(f'Initial leader {first}: all followers recognize the leader', flush=True)
+            start(joining_node)
+            assert eventually(leader, 'new node discovers existing leader') == first
+            joining_status = request(ports[joining_node], '/status')[1]
+            assert joining_status['role'] == 'FOLLOWER', joining_status
+            assert joining_status['term'] == first_term, joining_status
+            assert request(ports[first], '/status')[1]['term'] == first_term
+            print('New node: joined as follower without changing the election term', flush=True)
             stop(first)
             second = eventually(leader, 'leader after failure')
             assert second != first

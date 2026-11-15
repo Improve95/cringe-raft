@@ -1,7 +1,10 @@
 name: raft-cluster
 
 x-node-defaults: &node-defaults
+  image: cringe-raft:local
+  pull_policy: never
   build:
+    context: .
     dockerfile: Dockerfile
   volumes:
     - type: bind

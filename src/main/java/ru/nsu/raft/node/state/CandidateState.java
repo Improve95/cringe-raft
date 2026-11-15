@@ -36,6 +36,9 @@ public final class CandidateState extends AbstractRaftState {
 
     @Override
     public void onElectionTimeout() {
+        log.info(
+            "[{}] term={}, state={} electionTimeout event",
+            node.properties().nodeId(), this.getClass().getSimpleName(), node.term());
         node.becomeCandidate();
     }
 
