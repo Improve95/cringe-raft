@@ -1,5 +1,6 @@
 package ru.nsu.raft.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -12,6 +13,7 @@ import ru.nsu.raft.runtime.HeartbeatScheduler;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+@Slf4j
 @Configuration(proxyBeanMethods = false)
 public class RaftRuntimeConfiguration {
 
@@ -52,6 +54,12 @@ public class RaftRuntimeConfiguration {
     public ApplicationListener<ApplicationReadyEvent> raftStartup(ElectionTimer electionTimer, EventLoop eventLoop) {
         return _ -> {
             eventLoop.start();
+            try {
+                log.info("Waiting web initialization");
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             electionTimer.start();
         };
     }

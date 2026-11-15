@@ -5,7 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.SmartLifecycle;
 import ru.nsu.raft.node.RaftNode;
-import ru.nsu.raft.node.event.HeartbeatTick;
+import ru.nsu.raft.node.event.AppendEntriesReceived;
+import ru.nsu.raft.node.event.AppendEntriesResponseReceived;
 import ru.nsu.raft.node.event.NodeStarted;
 import ru.nsu.raft.node.event.RaftEvent;
 
@@ -72,11 +73,10 @@ public final class EventLoop implements SmartLifecycle {
     }
 
     private void dispatch(RaftEvent event) {
-        if (event instanceof HeartbeatTick) {
-            log.debug("[{}] handling {}", node.properties().nodeId(), event.getClass().getSimpleName());
-        } else {
-            log.info("[{}] handling {}", node.properties().nodeId(), event.getClass().getSimpleName());
+        if (!((event instanceof AppendEntriesResponseReceived) || (event instanceof AppendEntriesReceived))) {
+            log.trace("[{}] handling {}", node.properties().nodeId(), event.getClass().getSimpleName());
         }
+
         try {
             node.handle(event);
         } catch (Exception error) {

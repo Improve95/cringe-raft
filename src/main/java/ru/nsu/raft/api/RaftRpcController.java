@@ -2,6 +2,7 @@ package ru.nsu.raft.api;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+@Slf4j
 @RestController
 @RequestMapping("/raft")
 @Tag(name = "Raft RPC", description = "Межузловые запросы голосования и репликации")
@@ -42,6 +44,7 @@ public class RaftRpcController {
     @PostMapping("/append-entries")
     @Operation(summary = "Передать записи лога или heartbeat")
     public AppendEntriesResponse appendEntries(@RequestBody AppendEntriesRequest request) throws ExecutionException, InterruptedException {
+        log.debug("Кeceived AppendEntries from={} term={} entries={}", request.leaderId(), request.term(), request.entries().size());
         var reply = new CompletableFuture<AppendEntriesResponse>().orTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
         queue.post(new AppendEntriesReceived(request, reply));
         return reply.get();

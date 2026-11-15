@@ -20,8 +20,8 @@ springdoc:
 
 raft:
   node-id: node-1
-  election-timeout-min: 1500ms
-  election-timeout-max: 2000ms
+  election-timeout-min: 500ms
+  election-timeout-max: 800ms
   election-check-interval: 50ms
   heartbeat-interval: 200ms
   rpc-timeout: 1s
@@ -31,4 +31,4 @@ raft:
 
 logging:
   level:
-    ru.nsu.raft.runtime.EventLoop: ${HANDLING_EVENT_LEVEL:INFO}
+    ru.nsu.raft: ${HANDLING_EVENT_LEVEL:DEBUG}
