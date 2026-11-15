@@ -17,10 +17,10 @@ springdoc:
 
 raft:
   node-id: node-1
-  election-timeout-min: 300ms
-  election-timeout-max: 600ms
+  election-timeout-min: 500ms
+  election-timeout-max: 700ms
   heartbeat-interval: 75ms
   rpc-timeout: 1s
   transport:
-    connect-timeout: 500ms
+    connect-timeout: 400ms
     read-timeout: 2s
